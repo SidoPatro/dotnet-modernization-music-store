@@ -1,15 +1,23 @@
-﻿using MvcMusicStore.Models;
+using MvcMusicStore.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Linq;
-using System.Web.Mvc;
+using System.Threading.Tasks;
 
 namespace MvcMusicStore.Controllers
 {
     [Authorize]
     public class CheckoutController : Controller
     {
-        MusicStoreEntities storeDB = new MusicStoreEntities();
+        private readonly MusicStoreEntities storeDB;
         const string PromoCode = "FREE";
+
+        public CheckoutController(MusicStoreEntities storeDB)
+        {
+            this.storeDB = storeDB;
+        }
 
         //
         // GET: /Checkout/AddressAndPayment
@@ -23,10 +31,12 @@ namespace MvcMusicStore.Controllers
         // POST: /Checkout/AddressAndPayment
 
         [HttpPost]
-        public ActionResult AddressAndPayment(FormCollection values)
+        public async Task<ActionResult> AddressAndPayment(IFormCollection values)
         {
             var order = new Order();
-            TryUpdateModel(order);
+
+            // Bind form values to order using TryUpdateModelAsync (ASP.NET Core equivalent)
+            await TryUpdateModelAsync(order);
 
             try
             {
@@ -40,22 +50,21 @@ namespace MvcMusicStore.Controllers
                     order.Username = User.Identity.Name;
                     order.OrderDate = DateTime.Now;
 
-                    //Save Order
+                    // Save Order
                     storeDB.Orders.Add(order);
                     storeDB.SaveChanges();
 
-                    //Process the order
-                    var cart = ShoppingCart.GetCart(this.HttpContext);
+                    // Process the order
+                    var cart = ShoppingCart.GetCart(this.HttpContext, storeDB);
                     cart.CreateOrder(order);
 
                     return RedirectToAction("Complete",
                         new { id = order.OrderId });
                 }
-
             }
             catch
             {
-                //Invalid - redisplay with errors
+                // Invalid - redisplay with errors
                 return View(order);
             }
         }

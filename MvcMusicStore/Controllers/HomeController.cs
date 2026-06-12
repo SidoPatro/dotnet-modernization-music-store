@@ -1,7 +1,8 @@
-﻿using MvcMusicStore.Models;
+using MvcMusicStore.Models;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web.Mvc;
+using Microsoft.AspNetCore.Mvc;
+
 
 namespace MvcMusicStore.Controllers
 {
@@ -10,7 +11,12 @@ namespace MvcMusicStore.Controllers
         //
         // GET: /Home/
 
-        MusicStoreEntities storeDB = new MusicStoreEntities();
+        private readonly MusicStoreEntities storeDB;
+
+        public HomeController(MusicStoreEntities storeDB)
+        {
+            this.storeDB = storeDB;
+        }
 
         public ActionResult Index()
         {

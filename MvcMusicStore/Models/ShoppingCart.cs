@@ -1,38 +1,43 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web;
-using System.Web.Mvc;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace MvcMusicStore.Models
 {
     public partial class ShoppingCart
     {
-        MusicStoreEntities storeDB = new MusicStoreEntities();
+        private readonly MusicStoreEntities storeDB;
 
         string ShoppingCartId { get; set; }
 
         public const string CartSessionKey = "CartId";
 
-        public static ShoppingCart GetCart(HttpContextBase context)
+        public ShoppingCart(MusicStoreEntities storeDB)
         {
-            var cart = new ShoppingCart();
+            this.storeDB = storeDB;
+        }
+
+        public static ShoppingCart GetCart(HttpContext context, MusicStoreEntities storeDB)
+        {
+            var cart = new ShoppingCart(storeDB);
             cart.ShoppingCartId = cart.GetCartId(context);
             return cart;
         }
 
         // Helper method to simplify shopping cart calls
-        public static ShoppingCart GetCart(Controller controller)
+        public static ShoppingCart GetCart(Controller controller, MusicStoreEntities storeDB)
         {
-            return GetCart(controller.HttpContext);
+            return GetCart(controller.HttpContext, storeDB);
         }
 
         public void AddToCart(Album album)
         {
             // Get the matching cart and album instances
             var cartItem = storeDB.Carts.SingleOrDefault(
-c => c.CartId == ShoppingCartId
-&& c.AlbumId == album.AlbumId);
+                c => c.CartId == ShoppingCartId
+                && c.AlbumId == album.AlbumId);
 
             if (cartItem == null)
             {
@@ -61,8 +66,8 @@ c => c.CartId == ShoppingCartId
         {
             // Get the cart
             var cartItem = storeDB.Carts.Single(
-cart => cart.CartId == ShoppingCartId
-&& cart.RecordId == id);
+                cart => cart.CartId == ShoppingCartId
+                && cart.RecordId == id);
 
             int itemCount = 0;
 
@@ -116,7 +121,7 @@ cart => cart.CartId == ShoppingCartId
 
         public decimal GetTotal()
         {
-            // Multiply album price by count of that album to get 
+            // Multiply album price by count of that album to get
             // the current price for each of those albums in the cart
             // sum all album price totals to get the cart total
             decimal? total = (from cartItems in storeDB.Carts
@@ -146,7 +151,6 @@ cart => cart.CartId == ShoppingCartId
                 orderTotal += (item.Count * item.Album.Price);
 
                 storeDB.OrderDetails.Add(orderDetail);
-
             }
 
             // Set the order's total to the orderTotal count
@@ -162,26 +166,28 @@ cart => cart.CartId == ShoppingCartId
             return order.OrderId;
         }
 
-        // We're using HttpContextBase to allow access to cookies.
-        public string GetCartId(HttpContextBase context)
+        // We're using HttpContext to allow access to session.
+        public string GetCartId(HttpContext context)
         {
-            if (context.Session[CartSessionKey] == null)
+            var sessionCartId = context.Session.GetString(CartSessionKey);
+            if (string.IsNullOrEmpty(sessionCartId))
             {
-                if (!string.IsNullOrWhiteSpace(context.User.Identity.Name))
+                if (!string.IsNullOrWhiteSpace(context.User?.Identity?.Name))
                 {
-                    context.Session[CartSessionKey] = context.User.Identity.Name;
+                    sessionCartId = context.User.Identity.Name;
                 }
                 else
                 {
                     // Generate a new random GUID using System.Guid class
                     Guid tempCartId = Guid.NewGuid();
-
-                    // Send tempCartId back to client as a cookie
-                    context.Session[CartSessionKey] = tempCartId.ToString();
+                    sessionCartId = tempCartId.ToString();
                 }
+
+                // Store the cart ID in session
+                context.Session.SetString(CartSessionKey, sessionCartId);
             }
 
-            return context.Session[CartSessionKey].ToString();
+            return sessionCartId;
         }
 
         // When a user has logged in, migrate their shopping cart to

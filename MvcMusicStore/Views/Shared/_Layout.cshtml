@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <title>@ViewBag.Title</title>
@@ -18,12 +18,12 @@
             }
             <li><a href="@Url.Content("~/")" id="current">Home</a></li>
             <li><a href="@Url.Content("~/Store/")">Store</a></li>
-            <li>@{Html.RenderAction("CartSummary", "ShoppingCart");}</li>
-            @{Html.RenderPartial("_loginPartial"); }
+            <li>@await Html.PartialAsync("_CartSummary")</li>
+            @await Html.PartialAsync("_loginPartial")
         </ul>
     </div>
 
-    @{Html.RenderAction("GenreMenu", "Store");}
+    @await Html.PartialAsync("_GenreMenu")
 
     <div id="main">
         @RenderBody()

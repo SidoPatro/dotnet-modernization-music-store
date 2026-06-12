@@ -1,4 +1,4 @@
-﻿@if (User.Identity.IsAuthenticated)
+@if (User.Identity.IsAuthenticated)
 {
         <li>@Html.ActionLink("Log out", "Logoff", "Account", null, null)</li>
 }

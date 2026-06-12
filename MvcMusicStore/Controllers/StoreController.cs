@@ -1,12 +1,18 @@
 ﻿using MvcMusicStore.Models;
 using System.Linq;
-using System.Web.Mvc;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace MvcMusicStore.Controllers
 {
     public class StoreController : Controller
     {
-        MusicStoreEntities storeDB = new MusicStoreEntities();
+        private readonly MusicStoreEntities storeDB;
+
+        public StoreController(MusicStoreEntities storeDB)
+        {
+            this.storeDB = storeDB;
+        }
 
         //
         // GET: /Store/
@@ -24,7 +30,7 @@ namespace MvcMusicStore.Controllers
         public ActionResult Browse(string genre)
         {
             // Retrieve Genre and its Associated Albums from database
-            var genreModel = storeDB.Genres.Include("Albums")
+            var genreModel = storeDB.Genres.Include(g => g.Albums)
                 .Single(g => g.Name == genre);
 
             return View(genreModel);
@@ -42,14 +48,13 @@ namespace MvcMusicStore.Controllers
 
         //
         // GET: /Store/GenreMenu
-
-        [ChildActionOnly]
+        // Note: [ChildActionOnly] is not supported in ASP.NET Core MVC.
+        // This partial is invoked via @await Html.PartialAsync() or a ViewComponent.
         public ActionResult GenreMenu()
         {
             var genres = storeDB.Genres.ToList();
 
             return PartialView(genres);
         }
-
     }
 }
