@@ -23,9 +23,9 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// Register MusicStore EF Core DbContext with SQL Server
+// Register MusicStore EF Core DbContext with InMemory database (for POC/testing)
 builder.Services.AddDbContext<MusicStoreEntities>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("MusicStoreEntities")));
+    options.UseInMemoryDatabase("MvcMusicStore"));
 
 // Register ASP.NET Core Identity with an in-memory EF Core DbContext
 // (Replaces legacy System.Web.Security Membership / FormsAuthentication)
